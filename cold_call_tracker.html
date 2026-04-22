@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Cold Call Tracker — CR</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="icon" type="image/png" href="favicon/favicon-96x96.png" sizes="96x96" />
+<link rel="icon" type="image/svg+xml" href="favicon/favicon.svg" />
+<link rel="shortcut icon" href="favicon/favicon.ico" />
+<link rel="apple-touch-icon" sizes="180x180" href="favicon/apple-touch-icon.png" />
+<link rel="manifest" href="favicon/site.webmanifest" />
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0f1014;
+    --surface: #16181e;
+    --surface2: #1c1f28;
+    --border: rgba(255,255,255,0.07);
+    --border-strong: rgba(255,255,255,0.13);
+    --text: #e8eaf0;
+    --muted: #7a7f94;
+    --subtle: #3a3f52;
+    --green-0: #1a1e16;
+    --green-1: #2a3d1a;
+    --green-2: #3d6024;
+    --green-3: #5a8f32;
+    --green-4: #7ec347;
+    --green-5: #a8e060;
+    --accent: #7ec347;
+    --accent-dim: rgba(126,195,71,0.15);
+    --danger: #e05252;
+    --danger-dim: rgba(224,82,82,0.12);
+    --radius: 10px;
+    --radius-lg: 14px;
+  }
+
+  html { background: var(--bg); min-height: 100vh; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    padding: 40px 20px 80px;
+  }
+
+  .app {
+    max-width: 760px;
+    margin: 0 auto;
+  }
+
+  /* Header */
+  .header {
+    margin-bottom: 28px;
+  }
+  .header h1 {
+    font-size: 20px;
+    font-weight: 600;
+    letter-spacing: -0.3px;
+    color: var(--text);
+  }
+  .header p {
+    font-size: 13px;
+    color: var(--muted);
+    margin-top: 4px;
+    font-family: 'DM Mono', monospace;
+  }
+
+  /* Stat cards */
+  .stats {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+  .stat {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px 16px;
+  }
+  .stat-label {
+    font-size: 11px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: .7px;
+    font-weight: 500;
+    margin-bottom: 6px;
+  }
+  .stat-val {
+    font-size: 26px;
+    font-weight: 600;
+    font-family: 'DM Mono', monospace;
+    color: var(--text);
+    line-height: 1;
+  }
+
+  /* Main card */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+  }
+
+  /* Add row */
+  .add-row {
+    display: flex;
+    gap: 8px;
+    padding: 14px;
+    border-bottom: 1px solid var(--border);
+    flex-wrap: wrap;
+  }
+
+  input[type="text"],
+  input[type="number"] {
+    background: var(--surface2);
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    padding: 9px 12px;
+    outline: none;
+    transition: border-color .15s;
+  }
+  input[type="text"] { flex: 1 1 180px; }
+  input[type="number"] { width: 90px; }
+  input::placeholder { color: var(--muted); }
+  input:focus { border-color: var(--accent); }
+
+  .btn {
+    padding: 9px 16px;
+    border-radius: var(--radius);
+    border: 1px solid var(--border-strong);
+    background: transparent;
+    color: var(--muted);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background .15s, color .15s;
+    white-space: nowrap;
+  }
+  .btn:hover { background: var(--surface2); color: var(--text); }
+  .btn-primary {
+    background: var(--accent-dim);
+    border-color: rgba(126,195,71,0.3);
+    color: var(--accent);
+  }
+  .btn-primary:hover { background: rgba(126,195,71,0.22); }
+
+  /* Heatmap */
+  .heatmap-section {
+    padding: 14px;
+    border-bottom: 1px solid var(--border);
+  }
+  .section-label {
+    font-size: 11px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: .7px;
+    font-weight: 500;
+    margin-bottom: 10px;
+  }
+  .heatmap {
+    display: flex;
+    gap: 3px;
+    flex-wrap: wrap;
+    align-items: flex-start;
+  }
+  .hm-cell {
+    width: 14px;
+    height: 14px;
+    border-radius: 3px;
+    cursor: default;
+    position: relative;
+    transition: opacity .1s;
+  }
+  .hm-cell:hover { opacity: .8; }
+  .hm-cell:hover .tip {
+    display: block;
+  }
+  .tip {
+    display: none;
+    position: absolute;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--surface2);
+    border: 1px solid var(--border-strong);
+    border-radius: 6px;
+    padding: 4px 8px;
+    font-size: 11px;
+    white-space: nowrap;
+    color: var(--text);
+    z-index: 100;
+    pointer-events: none;
+    font-family: 'DM Mono', monospace;
+  }
+  .week-gap { width: 2px; flex-shrink: 0; }
+  .heatmap-legend {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    margin-top: 8px;
+    font-size: 11px;
+    color: var(--muted);
+    font-family: 'DM Mono', monospace;
+  }
+  .leg-cell {
+    width: 12px;
+    height: 12px;
+    border-radius: 3px;
+  }
+
+  /* Table */
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; }
+  th {
+    font-size: 11px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: .7px;
+    font-weight: 500;
+    padding: 10px 14px;
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+  }
+  td {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border);
+    font-size: 13px;
+    color: var(--text);
+    vertical-align: middle;
+  }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: rgba(255,255,255,0.02); }
+
+  .count-cell {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .count-num {
+    font-size: 16px;
+    font-weight: 600;
+    font-family: 'DM Mono', monospace;
+    color: var(--text);
+    min-width: 36px;
+  }
+  .count-inline {
+    width: 70px;
+    background: var(--surface2);
+    border: 1px solid var(--border-strong);
+    border-radius: 8px;
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    font-size: 13px;
+    padding: 5px 8px;
+    text-align: center;
+    outline: none;
+  }
+  .count-inline:focus { border-color: var(--accent); }
+
+  .acts { display: flex; gap: 6px; align-items: center; }
+  .act {
+    width: 30px;
+    height: 30px;
+    border-radius: 8px;
+    border: 1px solid var(--border-strong);
+    background: transparent;
+    color: var(--text);
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background .12s;
+    font-family: 'DM Mono', monospace;
+  }
+  .act:hover { background: var(--surface2); }
+  .act-del {
+    color: var(--danger);
+    border-color: rgba(224,82,82,0.25);
+  }
+  .act-del:hover { background: var(--danger-dim); }
+
+  .empty {
+    text-align: center;
+    padding: 28px;
+    color: var(--muted);
+    font-size: 13px;
+    font-family: 'DM Mono', monospace;
+  }
+
+  .io-row {
+    display: flex;
+    gap: 8px;
+    padding: 14px;
+    border-top: 1px solid var(--border);
+    flex-wrap: wrap;
+  }
+
+  @media (max-width: 560px) {
+    .stats { grid-template-columns: repeat(2, 1fr); }
+    .add-row { flex-direction: column; }
+    input[type="text"], input[type="number"] { width: 100%; }
+    .btn { width: 100%; }
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <div class="header">
+    <h1>Cold Call Tracker</h1>
+    <p>Canadian Restorations GTA — daily outreach log</p>
+  </div>
+
+  <div class="stats">
+    <div class="stat"><div class="stat-label">Total calls</div><div class="stat-val" id="s-total">0</div></div>
+    <div class="stat"><div class="stat-label">Days tracked</div><div class="stat-val" id="s-days">0</div></div>
+    <div class="stat"><div class="stat-label">This week</div><div class="stat-val" id="s-week">0</div></div>
+    <div class="stat"><div class="stat-label">Daily avg</div><div class="stat-val" id="s-avg">0</div></div>
+  </div>
+
+  <div class="card">
+    <div class="add-row">
+      <input type="text" id="dateInput" placeholder="Date (e.g. Apr 22 2026)" />
+      <input type="number" id="countInput" placeholder="# calls" min="0" />
+      <button class="btn btn-primary" id="addBtn">Add entry</button>
+    </div>
+
+    <div class="heatmap-section">
+      <div class="section-label">Activity — last 16 weeks</div>
+      <div class="heatmap" id="heatmap"></div>
+      <div class="heatmap-legend">
+        <span>Less</span>
+        <div class="leg-cell" style="background:var(--green-1)"></div>
+        <div class="leg-cell" style="background:var(--green-2)"></div>
+        <div class="leg-cell" style="background:var(--green-3)"></div>
+        <div class="leg-cell" style="background:var(--green-4)"></div>
+        <div class="leg-cell" style="background:var(--green-5)"></div>
+        <span>More</span>
+      </div>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Cold calls</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="tableBody"></tbody>
+      </table>
+    </div>
+
+    <div class="io-row">
+      <button class="btn" id="exportBtn">Export backup</button>
+      <button class="btn" id="importBtn">Import backup</button>
+      <input type="file" id="importFile" accept="application/json" style="display:none" />
+    </div>
+  </div>
+</div>
+
+<script>
+const KEY = "cr_coldcalls_v1";
+let data = load();
+
+function load() {
+  try {
+    const r = localStorage.getItem(KEY);
+    const p = r ? JSON.parse(r) : {};
+    return (p && typeof p === "object" && !Array.isArray(p)) ? p : {};
+  } catch { return {}; }
+}
+function save() { localStorage.setItem(KEY, JSON.stringify(data)); }
+
+function isoDate(d) {
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+function todayIso() { return isoDate(new Date()); }
+
+function niceDate(iso) {
+  const [y,m,dd] = iso.split('-').map(Number);
+  const d = new Date(y,m-1,dd);
+  const days = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  return `${days[d.getDay()]} ${months[m-1]} ${dd}, ${y}`;
+}
+
+function parseDate(s) {
+  const d = new Date(s);
+  if (!isNaN(d)) return d;
+  return null;
+}
+
+function weekStart(iso) {
+  const [y,m,d] = iso.split('-').map(Number);
+  const dt = new Date(y,m-1,d);
+  dt.setDate(dt.getDate() - dt.getDay());
+  return isoDate(dt);
+}
+
+function thisWeekTotal() {
+  const ws = weekStart(todayIso());
+  return Object.keys(data).filter(k=>weekStart(k)===ws).reduce((s,k)=>s+(data[k]||0),0);
+}
+
+function getEntries() {
+  return Object.keys(data).sort((a,b)=>b.localeCompare(a)).map(k=>({iso:k,count:data[k]||0}));
+}
+
+function add() {
+  const dateStr = document.getElementById('dateInput').value.trim();
+  const countStr = document.getElementById('countInput').value.trim();
+  if (!dateStr) return;
+  const d = parseDate(dateStr);
+  if (!d) { alert('Invalid date. Try: Apr 22 2026'); return; }
+  const iso = isoDate(d);
+  const n = countStr !== '' ? Math.max(0, parseInt(countStr)||0) : 0;
+  data[iso] = n;
+  save(); render();
+  document.getElementById('dateInput').value = '';
+  document.getElementById('countInput').value = '';
+  document.getElementById('dateInput').focus();
+}
+
+function inc(iso) { data[iso]=(data[iso]||0)+1; save(); render(); }
+function dec(iso) { data[iso]=Math.max(0,(data[iso]||0)-1); save(); render(); }
+function del(iso) { if(!confirm(`Delete ${niceDate(iso)}?`)) return; delete data[iso]; save(); render(); }
+function setVal(iso, val) { data[iso]=Math.max(0,parseInt(val)||0); save(); render(); }
+
+function renderStats() {
+  const entries = getEntries();
+  const total = entries.reduce((s,e)=>s+e.count,0);
+  const days = entries.length;
+  document.getElementById('s-total').textContent = total;
+  document.getElementById('s-days').textContent = days;
+  document.getElementById('s-week').textContent = thisWeekTotal();
+  document.getElementById('s-avg').textContent = days ? Math.round(total/days) : 0;
+}
+
+function cellColor(c, max) {
+  if (c === 0) return 'var(--green-0)';
+  const r = c/max;
+  if (r < 0.2) return 'var(--green-1)';
+  if (r < 0.4) return 'var(--green-2)';
+  if (r < 0.65) return 'var(--green-3)';
+  if (r < 0.85) return 'var(--green-4)';
+  return 'var(--green-5)';
+}
+
+function renderHeatmap() {
+  const hm = document.getElementById('heatmap');
+  hm.innerHTML = '';
+  const today = new Date();
+  const isos = [];
+  for (let i=111; i>=0; i--) {
+    const d = new Date(today);
+    d.setDate(today.getDate()-i);
+    isos.push(isoDate(d));
+  }
+  const counts = isos.map(iso=>data[iso]||0);
+  const max = Math.max(1,...counts);
+  const todayStr = todayIso();
+  let lastWS = null;
+
+  isos.forEach(iso => {
+    const ws = weekStart(iso);
+    if (lastWS && ws !== lastWS) {
+      const gap = document.createElement('div');
+      gap.className = 'week-gap';
+      hm.appendChild(gap);
+    }
+    lastWS = ws;
+
+    const [y,m,dd] = iso.split('-').map(Number);
+    const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+    const cell = document.createElement('div');
+    cell.className = 'hm-cell';
+    cell.style.background = cellColor(data[iso]||0, max);
+    cell.style.outline = iso === todayStr ? '1.5px solid rgba(255,255,255,0.3)' : '1px solid rgba(255,255,255,0.05)';
+    cell.style.outlineOffset = '-1px';
+
+    const tip = document.createElement('div');
+    tip.className = 'tip';
+    tip.textContent = `${months[m-1]} ${dd}: ${data[iso]||0} calls`;
+    cell.appendChild(tip);
+    hm.appendChild(cell);
+  });
+}
+
+function renderTable() {
+  const tbody = document.getElementById('tableBody');
+  tbody.innerHTML = '';
+  const entries = getEntries();
+  if (!entries.length) {
+    tbody.innerHTML = `<tr><td colspan="3" class="empty">No entries yet — add your first day above</td></tr>`;
+    return;
+  }
+  entries.forEach(e => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td style="font-family:'DM Mono',monospace;font-size:12px;color:#7a7f94">${niceDate(e.iso)}</td>
+      <td>
+        <div class="count-cell">
+          <span class="count-num" id="n-${e.iso}">${e.count}</span>
+          <input class="count-inline" type="number" value="${e.count}" min="0" data-iso="${e.iso}" />
+        </div>
+      </td>
+      <td>
+        <div class="acts">
+          <button class="act" onclick="inc('${e.iso}')">+</button>
+          <button class="act" onclick="dec('${e.iso}')">−</button>
+          <button class="act act-del" onclick="del('${e.iso}')">×</button>
+        </div>
+      </td>
+    `;
+    tbody.appendChild(tr);
+  });
+  tbody.querySelectorAll('.count-inline').forEach(inp => {
+    inp.addEventListener('change', () => setVal(inp.dataset.iso, inp.value));
+  });
+}
+
+function render() { renderStats(); renderHeatmap(); renderTable(); }
+
+function exportBackup() {
+  const payload = { version:1, exportedAt: new Date().toISOString(), data };
+  const blob = new Blob([JSON.stringify(payload,null,2)],{type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `coldcall-backup-${todayIso()}.json`;
+  document.body.appendChild(a); a.click(); a.remove();
+  URL.revokeObjectURL(url);
+}
+
+async function importFromFile(file) {
+  try {
+    const text = await file.text();
+    const parsed = JSON.parse(text);
+    let imported = parsed.data || parsed;
+    if (!imported || typeof imported !== 'object' || Array.isArray(imported)) { alert('Invalid file.'); return; }
+    const cleaned = {};
+    for (const [k,v] of Object.entries(imported)) {
+      const n = Number(v);
+      if (Number.isFinite(n) && n >= 0) cleaned[k] = Math.floor(n);
+    }
+    data = cleaned; save(); render();
+    alert('Import complete.');
+  } catch { alert('Could not import. Make sure it is valid JSON.'); }
+}
+
+document.getElementById('addBtn').addEventListener('click', add);
+document.getElementById('dateInput').addEventListener('keydown', e => { if(e.key==='Enter') add(); });
+document.getElementById('countInput').addEventListener('keydown', e => { if(e.key==='Enter') add(); });
+document.getElementById('exportBtn').addEventListener('click', exportBackup);
+document.getElementById('importBtn').addEventListener('click', () => document.getElementById('importFile').click());
+document.getElementById('importFile').addEventListener('change', e => {
+  const f = e.target.files && e.target.files[0];
+  if (!f) return;
+  if (!confirm('This will replace your current data. Continue?')) { e.target.value=''; return; }
+  importFromFile(f);
+  e.target.value = '';
+});
+
+render();
+</script>
+</body>
+</html>
